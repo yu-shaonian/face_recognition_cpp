@@ -4,12 +4,16 @@
 #include "torch/torch.h"
 #include "torch/script.h"
 
+using namespace torch::indexing;
+
 int main(int argc, char** argv) {
 	if (argc !=3)
 	{
 		std::cout << " .exe mode_path image_file" << std::endl;
 		return -1;
 	}
+
+
 
 	std::string model_path = argv[1];
 	std::string image_file = argv[2];
@@ -18,7 +22,12 @@ int main(int argc, char** argv) {
 
 	cv::Mat image = cv::imread(image_file);
 	std::vector<FaceInfo> face_info;
-	
+
+	at::Tensor img_tensor = torch::from_blob(image.data, { image.rows, image.cols, 3 }, torch::kByte).permute({ 2, 0, 1 }); // Channels x Height x Width
+
+	auto img_test = img_tensor.index({ "...", Slice(2, 50), Slice(2, 50) });  
+	std::cout<<"测试尺寸："<<img_test.sizes()<<std::endl;
+
 	centerface.detect(image, face_info);
 
 	for (int i = 0; i < face_info.size(); i++) {
@@ -27,8 +36,10 @@ int main(int argc, char** argv) {
 	}
 
 	cv::imwrite("test.jpg", image);
+	std::cout << "识别到的人数为："<< face_info.size()<<"\n";
 	torch::Tensor output = torch::randn({ 3,2 });
     std::cout << output;
+	std::cout << "\n人脸识别，libtorch测试成功";
 
 
 	return 0;
