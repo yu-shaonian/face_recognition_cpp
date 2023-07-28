@@ -5,6 +5,7 @@
 #include "torch/script.h"
 
 using namespace torch::indexing;
+using namespace cv;
 
 int main(int argc, char** argv) {
 	if (argc !=3)
@@ -13,6 +14,9 @@ int main(int argc, char** argv) {
 		return -1;
 	}
 
+	using torch::jit::script::Module;
+	Module module = torch::jit::load("../face_model_ir_se50.pt");
+	module.eval();
 
 
 	std::string model_path = argv[1];
@@ -25,20 +29,43 @@ int main(int argc, char** argv) {
 
 	at::Tensor img_tensor = torch::from_blob(image.data, { image.rows, image.cols, 3 }, torch::kByte).permute({ 2, 0, 1 }); // Channels x Height x Width
 
-	auto img_test = img_tensor.index({ "...", Slice(2, 50), Slice(2, 50) });  
-	std::cout<<"测试尺寸："<<img_test.sizes()<<std::endl;
+
 
 	centerface.detect(image, face_info);
 
 	for (int i = 0; i < face_info.size(); i++) {
-		cv::rectangle(image, cv::Point(face_info[i].x1, face_info[i].y1), cv::Point(face_info[i].x2, face_info[i].y2), cv::Scalar(0, 255, 0), 2);
+		try{
+			cv::rectangle(image, cv::Point(face_info[i].x1, face_info[i].y1), cv::Point(face_info[i].x2, face_info[i].y2), cv::Scalar(0, 255, 0), 2);
+			std::cout<<(int)face_info[i].x1<<"y1" << (int)face_info[i].y1<<"x2"<<(int)face_info[i].x2<<"y2"<< (int)face_info[i].y2<<std::endl;
+			cv::Rect m_select = Rect((int)face_info[i].x1,(int)face_info[i].y1,(int)face_info[i].x2-(int)face_info[i].x1,(int)face_info[i].y2-(int)face_info[i].y1);
+			Mat image_crop = image(m_select);
+			resize(image_crop, image_crop, Size(112, 112), 0, 0, INTER_CUBIC);
+
+			std::vector<int64_t> sizes = { 1, image_crop.rows, image_crop.cols,3 };
+			at::TensorOptions options(at::ScalarType::Byte);
+
+			at::Tensor img_input = torch::from_blob(image_crop.data, at::IntList(sizes), options); // Ch
+			img_input = img_input.toType(at::kFloat);//转为浮点型张量数据
+			img_input = img_input.permute({ 0, 3, 1, 2 }).div(255);
+			at::Tensor output = module.forward({ img_input }).toTensor();
+			std::cout << "output:" << output.sizes() << std::endl;
+		}
+		catch (int myNum) {
+		std::cout << "数据输入有问题！";
+		}
+		// auto img_test = img_tensor.index({ "...", Slice(face_info[i].x1, face_info[i].x2), Slice(face_info[i].y1, face_info[i].y2) });  
+		// std::cout<<"测试尺寸："<<img_test.sizes()<<std::endl;
 
 	}
 
 	cv::imwrite("test.jpg", image);
 	std::cout << "识别到的人数为："<< face_info.size()<<"\n";
-	torch::Tensor output = torch::randn({ 3,2 });
-    std::cout << output;
+	torch::Tensor input = torch::randn({ 1,3,112,112 });
+
+	at::Tensor output = module.forward({ input }).toTensor();
+	std::cout << "output:" << output.sizes() << std::endl;
+
+    std::cout << output.sizes();
 	std::cout << "\n人脸识别，libtorch测试成功";
 
 
