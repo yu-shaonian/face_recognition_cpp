@@ -32,6 +32,7 @@ int main(int argc, char** argv) {
 
 
 	centerface.detect(image, face_info);
+	at::Tensor output;
 
 	for (int i = 0; i < face_info.size(); i++) {
 		try{
@@ -47,7 +48,7 @@ int main(int argc, char** argv) {
 			at::Tensor img_input = torch::from_blob(image_crop.data, at::IntList(sizes), options); // Ch
 			img_input = img_input.toType(at::kFloat);//转为浮点型张量数据
 			img_input = img_input.permute({ 0, 3, 1, 2 }).div(255);
-			at::Tensor output = module.forward({ img_input }).toTensor();
+			output = module.forward({ img_input }).toTensor();
 			std::cout << "output:" << output.sizes() << std::endl;
 		}
 		catch (int myNum) {
@@ -61,9 +62,21 @@ int main(int argc, char** argv) {
 	cv::imwrite("test.jpg", image);
 	std::cout << "识别到的人数为："<< face_info.size()<<"\n";
 	torch::Tensor input = torch::randn({ 1,3,112,112 });
+	torch::Tensor embedding = torch::randn({ 8,512 });
+	torch::Tensor diff = output - embedding;
+	diff = torch::pow(diff, 1);
+	std::cout<<diff.sizes()<<std::endl;;
+	diff = diff.sum({1});
+	std::cout<<diff.sizes()<<std::endl;
+	std::tuple<torch::Tensor, torch::Tensor> b_tensor= torch::max(diff, 0, false);
+	torch::Tensor max_vaule = std::get<0>(b_tensor);
+	torch::Tensor max_index = std::get<1>(b_tensor);
+	std::cout<<max_vaule<<std::endl;
+	std::cout<<max_index<<std::endl;
 
-	at::Tensor output = module.forward({ input }).toTensor();
-	std::cout << "output:" << output.sizes() << std::endl;
+
+	at::Tensor test = module.forward({ input }).toTensor();
+	std::cout << "test:" << test.sizes() << std::endl;
 
     std::cout << output.sizes();
 	std::cout << "\n人脸识别，libtorch测试成功";
