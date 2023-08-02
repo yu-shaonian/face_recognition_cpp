@@ -7,6 +7,22 @@
 using namespace torch::indexing;
 using namespace cv;
 
+
+
+
+
+std::vector<char> get_the_bytes(std::string filename) {
+    std::ifstream input(filename, std::ios::binary);
+    std::vector<char> bytes(
+        (std::istreambuf_iterator<char>(input)),
+        (std::istreambuf_iterator<char>()));
+
+    input.close();
+    return bytes;
+}
+
+
+
 int main(int argc, char** argv) {
 	if (argc !=3)
 	{
@@ -61,8 +77,14 @@ int main(int argc, char** argv) {
 
 	cv::imwrite("test.jpg", image);
 	std::cout << "识别到的人数为："<< face_info.size()<<"\n";
-	torch::Tensor input = torch::randn({ 1,3,112,112 });
-	torch::Tensor embedding = torch::randn({ 8,512 });
+
+
+
+	std::vector<char> f = get_the_bytes("embedding.pt");
+    torch::IValue x = torch::pickle_load(f);
+    torch::Tensor embedding = x.toTensor();
+
+
 	torch::Tensor diff = output - embedding;
 	diff = torch::pow(diff, 1);
 	std::cout<<diff.sizes()<<std::endl;;
@@ -75,10 +97,6 @@ int main(int argc, char** argv) {
 	std::cout<<max_index<<std::endl;
 
 
-	at::Tensor test = module.forward({ input }).toTensor();
-	std::cout << "test:" << test.sizes() << std::endl;
-
-    std::cout << output.sizes();
 	std::cout << "\n人脸识别，libtorch测试成功";
 
 

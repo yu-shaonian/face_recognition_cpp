@@ -34,11 +34,18 @@ target_link_libraries( testlibtorch ${OpenCV_LIBS} )
 
 
 add_executable(demo ${TEST_COMPILE_CODE})
+add_executable(demo embedding.cpp)
 # add_executable(demo_2 demo_2.cpp)
 
 target_link_libraries(demo 
                       ${OpenCV_LIBS}
 					  )
+target_link_libraries(demo "${TORCH_LIBRARIES}")
+target_link_libraries(demo ${OpenCV_LIBS} )
+
+
+target_link_libraries(demo 
+                      ${OpenCV_LIBS}					  )
 target_link_libraries(demo "${TORCH_LIBRARIES}")
 target_link_libraries(demo ${OpenCV_LIBS} )
 
