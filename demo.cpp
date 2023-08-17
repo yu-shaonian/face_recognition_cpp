@@ -51,8 +51,8 @@ int main(int argc, char** argv) {
 	at::Tensor output;
 	while(cap.isOpened()) {
 		cap >> frame;
-		// cv::Mat image = cv::imread("/lgj/research/face_recognition_cpp.bak/face_user/company/company.jpg");
-		cv::Mat image = frame;
+		cv::Mat image = cv::imread("/lgj/research/face_recognition_cpp.bak/test.jpg");
+		// cv::Mat image = frame;
 		std::vector<FaceInfo> face_info;
 		ncnn::Mat inmat = ncnn::Mat::from_pixels(image.data, ncnn::Mat::PIXEL_RGB, image.cols, image.rows);
 		centerface.detect(inmat, face_info, image.cols, image.rows);
@@ -82,10 +82,10 @@ int main(int argc, char** argv) {
 		if(face_info.size() > 0){
 
 			torch::Tensor diff = output - embedding;
-			diff = torch::pow(diff, 1);
-			// std::cout<<"结果是："<<diff.sizes()<<diff<<std::endl;
+			diff = diff * diff;
+			// std::cout<<"平方后的结果是："<<diff.sizes()<<diff<<std::endl;
 			diff = diff.sum({1});
-			// std::cout<<"结果是："<<diff.sizes()<<diff<<std::endl;
+			std::cout<<"对比结果是："<<diff.sizes()<<diff<<std::endl;
 			std::tuple<torch::Tensor, torch::Tensor> b_tensor= torch::min(diff, -1, false);
 			torch::Tensor min_vaule = std::get<0>(b_tensor);
 			torch::Tensor min_index = std::get<1>(b_tensor);
