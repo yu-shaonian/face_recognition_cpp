@@ -49,4 +49,12 @@ cv::Mat align(cv::Mat& image, FaceInfo& face) {
 
 
 
+std::vector<char> get_the_bytes(std::string filename) {
+    std::ifstream input(filename, std::ios::binary);
+    std::vector<char> bytes(
+        (std::istreambuf_iterator<char>(input)),
+        (std::istreambuf_iterator<char>()));
 
+    input.close();
+    return bytes;
+}

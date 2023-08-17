@@ -5,8 +5,8 @@ set (DIR /lgj/source_code/ncnn-20230517/build-host-gcc-linux/install)
 set(Torch_DIR "/lgj/source_code/libtorch/share/cmake/Torch")
 project(testlibtorch)
  
-set(CMAKE_CXX_STANDARD 14)
-
+# set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_FLAGS "-std=c++17 -lstdc++fs")
 
 #opencv4.1.0
 find_package(OpenCV 3 REQUIRED)
@@ -34,23 +34,29 @@ set_target_properties(
 #5.source directory
 file(GLOB TEST_SRC ${CMAKE_CURRENT_LIST_DIR}/cpp/*.cpp
                    ${CMAKE_CURRENT_LIST_DIR}/demo.cpp)
-set(TEST_COMPILE_CODE ${TEST_SRC})
+file(GLOB TEST_SRC_2 ${CMAKE_CURRENT_LIST_DIR}/cpp/*.cpp
+                   ${CMAKE_CURRENT_LIST_DIR}/embedding.cpp)
+set(TEST_COMPILE_CODE ${TEST_SRC})  
+set(TEST_COMPILE_CODE_2 ${TEST_SRC_2})
 
 
 add_executable(demo ${TEST_COMPILE_CODE})
+add_executable(embedding ${TEST_COMPILE_CODE_2})
 # add_executable(demo_2 demo_2.cpp)
-
-
-add_executable(testlibtorch test_2.cpp)
-target_link_libraries(testlibtorch "${TORCH_LIBRARIES}")
-target_link_libraries( testlibtorch ${OpenCV_LIBS} )
 
 target_link_libraries(demo PRIVATE
                       libncnn
                       ${OpenCV_LIBS} 
                       "${TORCH_LIBRARIES}"
-                       OpenMP::OpenMP_CXX)
+                       OpenMP::OpenMP_CXX
+                       stdc++fs)
+target_link_libraries(embedding PRIVATE
+                       libncnn
+                       ${OpenCV_LIBS} 
+                       "${TORCH_LIBRARIES}"
+                        OpenMP::OpenMP_CXX
+                        stdc++fs)                       
 # target_link_libraries(demo PRIVATE OpenMP::OpenMP_CXX)
-set_property(TARGET testlibtorch PROPERTY CXX_STANDARD 14)
+# set_property(TARGET testlibtorch PROPERTY CXX_STANDARD 14)
 
 
